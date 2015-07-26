@@ -12,6 +12,5 @@ designators <- c("Z","Z","Z","Z","Z","C","Z","Z","Z","C","Z","Z","Z","C","C","Z"
 
 
 index <- data.frame(ind=1:48, names = disasters, designators = designators)
-write.csv(index,"Desasters.csv")
 
 write.csv(index,"Desasters.csv")

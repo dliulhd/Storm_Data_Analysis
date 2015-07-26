@@ -1,10 +1,49 @@
-# The "ReadData.R" file reads the raw data frame into "df_Storm"
-# Run only when necessary
-# source("ReadData.R")
+---
+title: "Storm events in the US and the damages"
+author: "Lihui LIU"
+date: "26 juillet 2015"
+output: html_document
+---
 
+SYNOPSIS: This report studies the human and economic loss caused by storm events throughout the US. The events are categorized following the norm defined by the US National Oceanic and Atmospheric Administration. The losses will be calculated for individual incidents of each type of event, as well as cumulatively for all incidents of each type of event. It will be shown that 
+
+## Processing data
+
+
+The raw data is provided by the US National Oceanic and Atmospheric Administration (NOAA). The following lines are for downloading and the data importing it into the data frame "df_Storm".
+
+```{r, cache=TRUE}
+# url <- "https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2"
+# download.file(url,"storm_data.csv.bz2",method = "curl")
+df_Storm <- read.csv("storm_data.csv.bz2")
+```
+
+The data needs cleaning up because the event names do not follow the the norm of NOAA. The latter classifies the hostile weather events in 48 types. The following lines of code creats a dataframe "index" storing these types 
+
+```{r, cache=TRUE}
+disasters <- c("Astronomical Low Tide","Avalanche","Blizzard","Costal Flood","Cold/Wind Chill","Debris Flow",
+               "Dense Fog","Dense Smoke","Drought","Dust Devil","Dust Storm","Excessive Heat","Extreme Cold/Wind Chill",
+               "Flash Flood","Flood","Freezing Fog","Frost/Freeze", "Funnel Cloud","Hail","Heat","Heavy Rain","Heavy Snow",
+               "High Surf","High Wind","Hurricane/Typhoon","Ice Storm","Lakeshore Flood","Lake-Effect Snow",
+               "Lightning","Marine Hail","Marine High Wind","Marine Strong Wind","Marine Thunderstorm Wind",
+               "Rip Current","Seiche","Sleet","Storm Tide","Strong Wind","Thunderstorm Wind","Tornado",
+               "Tropical Depression","Tropical Storm","Tsunami","Volcanic Ash","Waterspout","Wildfire",
+               "Winter Storm","Winter Weather")
+designators <- c("Z","Z","Z","Z","Z","C","Z","Z","Z","C","Z","Z","Z","C","C","Z","C","Z","C","Z","C","Z","Z","Z",
+           "Z","Z","Z","Z","C","M","M","M","M","Z","Z","Z","Z","Z","C","C","Z","Z","Z","Z","M","Z","Z","Z")
+index <- data.frame(ind=1:48, names = disasters, designators = designators)
+```
+
+The index data frame is
+```{r,cache=TRUE}
+print(index)
+```
+
+Then we can create a vector, whose length is the number of different events appearing in the raw data, and whose entries tell what type each event is, following NOAA's norm. The following code is for this purpose, where the procedure where some judgement of empirical nature is involved for some unclear descriptions. The vector created is "tidy_aux".
+
+```{r,cache=TRUE}
 EV_LVS <- levels(df_Storm$EVTYPE)
 tidy_aux <- data.frame(lev= EV_LVS, lab = rep(0,length(EV_LVS)))
-index <- read.csv("Desasters.csv")
 
 tidy_aux$lab[grep("summary",EV_LVS,ignore.case = TRUE)] <- -1
 
@@ -178,5 +217,61 @@ tidy_aux$lab[grep("winter mix",EV_LVS,ignore.case = TRUE)] <- index[48,1] # WINT
 tidy_aux$lab[grep("light sn",EV_LVS,ignore.case = TRUE)] <- index[48,1] # WINTER WEATHER
 tidy_aux$lab[grep("moderate sn",EV_LVS,ignore.case = TRUE)] <- index[48,1] # WINTER WEATHER
 tidy_aux$lab[c(579)] <- index[48,1] # WINTER WEATHER
+```
 
 
+This done, we can add a new column to the raw data frame, indicating the type of event of each line conforming to NOAA norm. The new data frame is called "df_Storm2". Note that some unidentifiable events (such as WET) are purged.
+
+```{r,cache=TRUE}
+IND_VEC <- vector("numeric",dim(df_Storm)[1])
+
+for(i in 1:length(IND_VEC)){
+  indicator <- which(tidy_aux$lev == df_Storm$EVTYPE[i])
+  IND_VEC[i] <- tidy_aux$lab[indicator]
+}
+
+IND_VEC <- IND_DF
+
+IND_IND_VEC <- IND_VEC!=0 & IND_VEC!=-1
+
+df_Storm2 <- cbind(df_Storm[IND_IND_VEC,],ST_EVTYPE = IND_VEC[IND_IND_VEC])
+```
+
+The final step of processing data is to create a data frame summarizing the damages of each of the 48 types of weather conditions. The data frame thus obtained is called "Final_DF".
+
+
+```{r,cache=TRUE}
+EV_Count <- Ave_Fatal <- Tot_Fatal <- Ave_Inj <- Tot_Inj <- Ave_PropDam <- Tot_PropDam <- Ave_CropDam <- Tot_CropDam <- vector("numeric",48)
+
+
+for(i in 1:48) {
+  temp_indicator <- df_Storm2$ST_EVTYPE==i
+  temp_fat <- df_Storm2$FATALITIES[temp_indicator]
+  temp_inj <- df_Storm2$INJURIES[temp_indicator]
+  temp_PropDam <- df_Storm2$PROPDMG[temp_indicator]
+  temp_CropDam <- df_Storm2$CROPDMG[temp_indicator]
+  Ave_Fatal[i] <- mean(temp_fat)
+  Tot_Fatal[i] <- sum(temp_fat)
+  Ave_Inj[i] <- mean(temp_inj)
+  Tot_Inj[i] <- sum(temp_inj)
+  Ave_PropDam[i] <- mean(temp_PropDam)
+  Tot_PropDam[i] <- sum(temp_PropDam)
+  Ave_CropDam[i] <- mean(temp_CropDam)
+  Tot_CropDam[i] <- sum(temp_CropDam)
+  EV_Count[i] <- length(temp_fat)
+}
+
+Final_DF <- data.frame(EVInd = 1:48, EVTYPE = index[,3], Ave_Fatal = Ave_Fatal, Tot_Fatal = Tot_Fatal, 
+                       Ave_Inj = Ave_Inj, Tot_Inj = Tot_Inj, 
+                       Ave_PropDam = Ave_PropDam, Tot_PropDam = Tot_PropDam, 
+                       Ave_CropDam = Ave_CropDam, Tot_CropDam = Tot_CropDam, Event_Count = EV_Count)
+
+```
+
+## Results 
+
+```{r,cache=TRUE}
+
+```
+
+### abc
